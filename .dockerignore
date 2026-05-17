@@ -1,0 +1,33 @@
+# Binaries
+hug
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+LICENSE
+
+# Git
+.git/
+.gitignore
+
+# Docker
+docker/Dockerfile
+docker/.dockerignore
