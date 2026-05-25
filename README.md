@@ -61,6 +61,8 @@ If you have Go 1.21+ installed:
 go install github.com/hansohn/hvm@latest
 ```
 
+The binary is placed in `$GOPATH/bin` (typically `~/go/bin`). Ensure that directory is on your `PATH`. Note: the version reported by `hvm version` will show `dev` when installed this way — use a release download for a versioned binary.
+
 ### Build from source (native)
 
 ```bash
