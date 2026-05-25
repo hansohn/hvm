@@ -53,6 +53,14 @@ sudo mv hvm /usr/local/bin/
 
 Download the `.zip` from the [releases page](https://github.com/hansohn/hvm/releases/latest), extract `hvm.exe`, and add it to a directory in your `%PATH%`.
 
+### go install
+
+If you have Go 1.21+ installed:
+
+```bash
+go install github.com/hansohn/hvm@latest
+```
+
 ### Build from source (native)
 
 ```bash
