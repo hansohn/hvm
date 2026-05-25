@@ -32,6 +32,27 @@
 
 ## :hammer_and_wrench: Installation
 
+### Download a release (recommended)
+
+Download the latest binary for your platform from the [releases page](https://github.com/hansohn/hvm/releases/latest), extract it, and move it to a directory on your `PATH`.
+
+**macOS / Linux**
+
+```bash
+# macOS (Apple Silicon)
+curl -L https://github.com/hansohn/hvm/releases/latest/download/hvm_$(curl -s https://api.github.com/repos/hansohn/hvm/releases/latest | grep tag_name | cut -d'"' -f4 | tr -d v)_darwin_arm64.tar.gz | tar -xz
+# macOS (Intel)
+curl -L https://github.com/hansohn/hvm/releases/latest/download/hvm_$(curl -s https://api.github.com/repos/hansohn/hvm/releases/latest | grep tag_name | cut -d'"' -f4 | tr -d v)_darwin_amd64.tar.gz | tar -xz
+# Linux (amd64)
+curl -L https://github.com/hansohn/hvm/releases/latest/download/hvm_$(curl -s https://api.github.com/repos/hansohn/hvm/releases/latest | grep tag_name | cut -d'"' -f4 | tr -d v)_linux_amd64.tar.gz | tar -xz
+
+sudo mv hvm /usr/local/bin/
+```
+
+**Windows**
+
+Download the `.zip` from the [releases page](https://github.com/hansohn/hvm/releases/latest), extract `hvm.exe`, and add it to a directory in your `%PATH%`.
+
 ### Build from source (native)
 
 ```bash
