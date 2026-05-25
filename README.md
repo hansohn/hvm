@@ -1,6 +1,6 @@
 <div align="center">
   <h3>hvm</h3>
-  <p>a version manager for HashiCorp tools</p>
+  <p>Version manager for HashiCorp tools</p>
   <p>
     <!-- Build Status -->
     <a href="https://github.com/hansohn/hvm/actions/workflows/ci.yml">
