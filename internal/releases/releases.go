@@ -16,7 +16,7 @@ import (
 const DefaultBaseURL = "https://releases.hashicorp.com"
 
 var (
-	versionRegex = regexp.MustCompile(`^[\d]+\.[\d]+\.[\d]+`)
+	versionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+`)
 	buildRegex   = regexp.MustCompile(`([^_/]+)_([^_/]+)_([^_/]+)_([^_/.]+)\.(zip|tar\.gz)$`)
 )
 
@@ -49,11 +49,11 @@ func New(baseURL string) *Client {
 
 // FetchApplications returns a sorted, deduplicated list of available applications.
 func (c *Client) FetchApplications() ([]string, error) {
-	resp, err := c.httpClient.Get(c.BaseURL) //nolint:noctx
+	resp, err := c.httpClient.Get(c.BaseURL) //nolint:noctx // context not available at this call site; no timeout needed for a CLI tool
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch applications: %w", err)
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close() //nolint:errcheck // response body close error is not actionable after successful read
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -96,11 +96,11 @@ func (c *Client) FetchApplications() ([]string, error) {
 func (c *Client) FetchVersions(app string) ([]string, error) {
 	url := fmt.Sprintf("%s/%s/", c.BaseURL, app)
 	// #nosec G107 -- URL constructed from user-configured BaseURL and app name from trusted source
-	resp, err := c.httpClient.Get(url) //nolint:noctx
+	resp, err := c.httpClient.Get(url) //nolint:noctx // context not available at this call site; no timeout needed for a CLI tool
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch versions for %s: %w", app, err)
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close() //nolint:errcheck // response body close error is not actionable after successful read
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -140,7 +140,7 @@ func (c *Client) FetchVersions(app string) ([]string, error) {
 	}
 	entries := make([]versionEntry, 0, len(versionSet))
 	for v := range versionSet {
-		pv, _ := version.NewVersion(v)
+		pv, _ := version.NewVersion(v) //nolint:errcheck // non-semver version strings are valid; parsed value is nil and handled in sort
 		entries = append(entries, versionEntry{raw: v, parsed: pv})
 	}
 
@@ -163,11 +163,11 @@ func (c *Client) FetchVersions(app string) ([]string, error) {
 func (c *Client) FetchVersionMetadata(app, ver string) (*VersionMetadata, error) {
 	url := fmt.Sprintf("%s/%s/%s/", c.BaseURL, app, ver)
 	// #nosec G107 -- URL constructed from user-configured BaseURL and values from trusted source
-	resp, err := c.httpClient.Get(url) //nolint:noctx
+	resp, err := c.httpClient.Get(url) //nolint:noctx // context not available at this call site; no timeout needed for a CLI tool
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch metadata for %s %s: %w", app, ver, err)
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close() //nolint:errcheck // response body close error is not actionable after successful read
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -187,22 +187,23 @@ func (c *Client) FetchVersionMetadata(app, ver string) (*VersionMetadata, error)
 	walk = func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "a" {
 			for _, attr := range n.Attr {
-				if attr.Key == "href" {
-					href := attr.Val
-					if strings.Contains(href, "..") {
-						continue
-					}
-					parts := strings.Split(strings.TrimRight(href, "/"), "/")
-					filename := parts[len(parts)-1]
-					if filename != "" && filename != app && filename != ver {
-						metadata.Files = append(metadata.Files, filename)
-						if matches := buildRegex.FindStringSubmatch(filename); len(matches) >= 5 {
-							metadata.Builds = append(metadata.Builds, Build{
-								OS:   matches[3],
-								Arch: matches[4],
-								URL:  href,
-							})
-						}
+				if attr.Key != "href" {
+					continue
+				}
+				href := attr.Val
+				if strings.Contains(href, "..") {
+					continue
+				}
+				parts := strings.Split(strings.TrimRight(href, "/"), "/")
+				filename := parts[len(parts)-1]
+				if filename != "" && filename != app && filename != ver {
+					metadata.Files = append(metadata.Files, filename)
+					if matches := buildRegex.FindStringSubmatch(filename); len(matches) >= 5 {
+						metadata.Builds = append(metadata.Builds, Build{
+							OS:   matches[3],
+							Arch: matches[4],
+							URL:  href,
+						})
 					}
 				}
 			}

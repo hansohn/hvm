@@ -130,7 +130,7 @@ func TestFilterFilesByPlatform(t *testing.T) {
 // ---- FetchApplications -----------------------------------------------------
 
 func TestFetchApplications(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, `<html><body>
 <a href="/consul/">consul</a>
 <a href="/terraform/">terraform</a>
@@ -152,7 +152,7 @@ func TestFetchApplications(t *testing.T) {
 }
 
 func TestFetchApplicationsHTTPError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "server error", http.StatusInternalServerError)
 	}))
 	defer srv.Close()
@@ -166,7 +166,7 @@ func TestFetchApplicationsHTTPError(t *testing.T) {
 // ---- FetchVersions ---------------------------------------------------------
 
 func TestFetchVersions(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, `<html><body>
 <a href="/terraform/1.9.8/">1.9.8</a>
 <a href="/terraform/1.9.9/">1.9.9</a>
@@ -202,7 +202,7 @@ func TestFetchVersionsHTTPError(t *testing.T) {
 // ---- FetchVersionMetadata --------------------------------------------------
 
 func TestFetchVersionMetadata(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, `<html><body>
 <a href="terraform_1.9.8_linux_amd64.zip">terraform_1.9.8_linux_amd64.zip</a>
 <a href="terraform_1.9.8_darwin_arm64.zip">terraform_1.9.8_darwin_arm64.zip</a>

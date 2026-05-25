@@ -7,13 +7,13 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
-// FilterEnterpriseVersions filters versions based on enterprise and HSM flags.
+// EnterpriseVersions filters versions based on enterprise and HSM flags.
 //
 // Filtering is scoped by the flag combination:
 //   - No flags:      only community versions (no +ent)
 //   - -e only:       only enterprise versions (+ent, excluding .hsm)
 //   - -e --hsm:      only HSM versions (.hsm)
-func FilterEnterpriseVersions(versions []string, includeEnterprise, includeHSM bool) []string {
+func EnterpriseVersions(versions []string, includeEnterprise, includeHSM bool) []string {
 	filtered := make([]string, 0, len(versions))
 	for _, v := range versions {
 		isEnterprise := strings.Contains(v, "+ent")
@@ -37,9 +37,9 @@ func FilterEnterpriseVersions(versions []string, includeEnterprise, includeHSM b
 	return filtered
 }
 
-// FilterPreReleaseVersions removes pre-release versions (alpha, beta, rc) when
+// PreReleaseVersions removes pre-release versions (alpha, beta, rc) when
 // includePreRelease is false.
-func FilterPreReleaseVersions(versions []string, includePreRelease bool) []string {
+func PreReleaseVersions(versions []string, includePreRelease bool) []string {
 	if includePreRelease {
 		return versions
 	}
@@ -69,14 +69,14 @@ func LimitVersionCount(versions []string, count int) []string {
 	return versions[:count]
 }
 
-// FilterVersionsByPattern returns all versions matching the given pattern.
+// VersionsByPattern returns all versions matching the given pattern.
 // Versions must be pre-sorted newest first.
 //
 // Pattern matching:
 //   - "latest" returns only the first (newest) version
 //   - Exact match (e.g. "1.9.8") returns that single version
 //   - Prefix match (e.g. "1.9") returns all matching versions (e.g. all 1.9.x)
-func FilterVersionsByPattern(pattern string, versions []string) []string {
+func VersionsByPattern(pattern string, versions []string) []string {
 	if pattern == "latest" {
 		if len(versions) > 0 {
 			return versions[:1]

@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	osc52 "github.com/aymanbagabas/go-osc52/v2"
 	"github.com/atotto/clipboard"
+	osc52 "github.com/aymanbagabas/go-osc52/v2"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -81,6 +81,8 @@ type appDelegate struct{}
 func (d appDelegate) Height() int                             { return 1 }
 func (d appDelegate) Spacing() int                            { return 0 }
 func (d appDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
+
+//nolint:gocritic // hugeParam: list.Model value receiver required by the list.ItemDelegate interface
 func (d appDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	ai, ok := listItem.(appItem)
 	if !ok {
@@ -91,9 +93,9 @@ func (d appDelegate) Render(w io.Writer, m list.Model, index int, listItem list.
 		str += " " + dimStyle.Render("(→ "+ai.current+")")
 	}
 	if index == m.Index() {
-		fmt.Fprint(w, selectedItemStyle.Render("❯ "+str))
+		fmt.Fprint(w, selectedItemStyle.Render("❯ "+str)) //nolint:errcheck // fmt.Fprint to io.Writer in bubbletea render; error is unhandleable
 	} else {
-		fmt.Fprint(w, itemStyle.Render(str))
+		fmt.Fprint(w, itemStyle.Render(str)) //nolint:errcheck // fmt.Fprint to io.Writer in bubbletea render; error is unhandleable
 	}
 }
 
@@ -102,6 +104,8 @@ type versionDelegate struct{}
 func (d versionDelegate) Height() int                             { return 1 }
 func (d versionDelegate) Spacing() int                            { return 0 }
 func (d versionDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
+
+//nolint:gocritic // hugeParam: list.Model value receiver required by the list.ItemDelegate interface
 func (d versionDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	vi, ok := listItem.(versionItem)
 	if !ok {
@@ -118,9 +122,9 @@ func (d versionDelegate) Render(w io.Writer, m list.Model, index int, listItem l
 	}
 	str := fmt.Sprintf("%d. %s%s", index+1, marker, vi.version)
 	if index == m.Index() {
-		fmt.Fprint(w, selectedItemStyle.Render("❯ "+str))
+		fmt.Fprint(w, selectedItemStyle.Render("❯ "+str)) //nolint:errcheck // fmt.Fprint to io.Writer in bubbletea render; error is unhandleable
 	} else {
-		fmt.Fprint(w, itemStyle.Render(str))
+		fmt.Fprint(w, itemStyle.Render(str)) //nolint:errcheck // fmt.Fprint to io.Writer in bubbletea render; error is unhandleable
 	}
 }
 
@@ -197,8 +201,10 @@ type model struct {
 	confirmVer  string
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) Init() tea.Cmd { return nil }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -327,6 +333,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // ---- navigation ------------------------------------------------------------
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) handleBack() (tea.Model, tea.Cmd) {
 	switch m.stage {
 	case stageMetadata:
@@ -342,6 +349,7 @@ func (m model) handleBack() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) navigateToApps() (tea.Model, tea.Cmd) {
 	m.list = newAppList(m.apps, m.appCurrents)
 	m.stage = stageApp
@@ -359,6 +367,7 @@ func (m model) navigateToApps() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) handleSelectCurrent() (tea.Model, tea.Cmd) {
 	switch m.stage {
 	case stageApp:
@@ -373,6 +382,7 @@ func (m model) handleSelectCurrent() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) handleSelectApp(app string) (tea.Model, tea.Cmd) {
 	versions, err := m.client.FetchVersions(app)
 	if err != nil {
@@ -393,11 +403,14 @@ func (m model) handleSelectApp(app string) (tea.Model, tea.Cmd) {
 			m.installed[v] = true
 		}
 	}
-	m.currentVer, _ = m.mgr.CurrentVersion(app, runtime.GOOS)
+	if cur, err := m.mgr.CurrentVersion(app, runtime.GOOS); err == nil {
+		m.currentVer = cur
+	}
 	m.list = newVersionList(versions, m.installed, m.currentVer, app)
 	return m, nil
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) handleSelectVersion(version string) (tea.Model, tea.Cmd) {
 	metadata, err := m.client.FetchVersionMetadata(m.app, version)
 	if err != nil {
@@ -415,6 +428,7 @@ func (m model) handleSelectVersion(version string) (tea.Model, tea.Cmd) {
 
 // ---- install / use / remove ------------------------------------------------
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) doInstall() (tea.Model, tea.Cmd) {
 	vi, ok := m.list.SelectedItem().(versionItem)
 	if !ok {
@@ -431,6 +445,7 @@ func (m model) doInstall() (tea.Model, tea.Cmd) {
 	return m, tea.Batch(m.spin.Tick, m.installCmd(vi.version))
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) doUse() (tea.Model, tea.Cmd) {
 	vi, ok := m.list.SelectedItem().(versionItem)
 	if !ok {
@@ -454,6 +469,7 @@ func (m model) doUse() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) doConfirmRemove() (tea.Model, tea.Cmd) {
 	vi, ok := m.list.SelectedItem().(versionItem)
 	if !ok {
@@ -470,6 +486,7 @@ func (m model) doConfirmRemove() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) doRemove() (tea.Model, tea.Cmd) {
 	if err := m.mgr.Remove(m.app, m.confirmVer, runtime.GOOS); err != nil {
 		m.statusMsg = "Error: " + err.Error()
@@ -490,6 +507,8 @@ func (m model) doRemove() (tea.Model, tea.Cmd) {
 }
 
 // installCmd runs the download + activate in a goroutine and returns an opDoneMsg.
+//
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) installCmd(version string) tea.Cmd {
 	app := m.app
 	mgr := m.mgr
@@ -520,6 +539,7 @@ func (m model) installCmd(version string) tea.Cmd {
 
 // ---- views -----------------------------------------------------------------
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) View() string {
 	if m.err != nil {
 		return fmt.Sprintf("\nError: %v\n", m.err)
@@ -537,11 +557,13 @@ func (m model) View() string {
 	}
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) appView() string {
 	return "\n" + m.list.View() +
 		"\n  q: quit • ↑/↓: navigate • /: search • enter: select"
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) versionView() string {
 	var sb strings.Builder
 	sb.WriteString("\n")
@@ -550,9 +572,9 @@ func (m model) versionView() string {
 
 	switch {
 	case m.loading:
-		sb.WriteString(fmt.Sprintf("\n  %s %s", m.spin.View(), m.loadingMsg))
+		fmt.Fprintf(&sb, "\n  %s %s", m.spin.View(), m.loadingMsg)
 	case m.confirmMode:
-		sb.WriteString(fmt.Sprintf("\n  Remove %s@%s? (y/n)", m.app, m.confirmVer))
+		fmt.Fprintf(&sb, "\n  Remove %s@%s? (y/n)", m.app, m.confirmVer)
 	case m.statusMsg != "":
 		if m.statusIsErr {
 			sb.WriteString("\n  " + statusErrStyle.Render(m.statusMsg))
@@ -565,6 +587,7 @@ func (m model) versionView() string {
 	return sb.String()
 }
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) metadataView() string {
 	cursorIdx := m.yv.cursorLineIdx()
 	var sb strings.Builder
@@ -602,9 +625,11 @@ func Run(client *releases.Client) error {
 
 	// Pre-load current versions for any locally installed apps.
 	appCurrents := make(map[string]string)
-	if installedApps, err := mgr.InstalledApps(); err == nil {
+	installedApps, iaErr := mgr.InstalledApps()
+	if iaErr == nil {
 		for _, app := range installedApps {
-			if ver, err := mgr.CurrentVersion(app, runtime.GOOS); err == nil && ver != "" {
+			ver, verErr := mgr.CurrentVersion(app, runtime.GOOS)
+			if verErr == nil && ver != "" {
 				appCurrents[app] = ver
 			}
 		}
@@ -686,6 +711,7 @@ func newBaseList(items []list.Item, delegate list.ItemDelegate, title string) li
 
 // ---- helpers ---------------------------------------------------------------
 
+//nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) buildYAMLView() *yamlView {
 	current, _ := releases.FilterAndSortBuilds(m.metadata.Builds, runtime.GOOS, runtime.GOARCH)
 	if current == nil {

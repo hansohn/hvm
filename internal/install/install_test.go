@@ -24,10 +24,10 @@ func newTestManager(t *testing.T) *Manager {
 // writeBinary creates a minimal executable at path, creating parent dirs.
 func writeBinary(t *testing.T, path string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("MkdirAll: %v", err)
 	}
-	if err := os.WriteFile(path, []byte("#!/bin/sh\necho hello"), 0755); err != nil {
+	if err := os.WriteFile(path, []byte("#!/bin/sh\necho hello"), 0o755); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 }
@@ -55,14 +55,14 @@ func makeTarGzArchive(t *testing.T, filename, content string) []byte {
 	gw := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gw)
 	body := []byte(content)
-	if err := tw.WriteHeader(&tar.Header{Name: filename, Size: int64(len(body)), Mode: 0755}); err != nil {
+	if err := tw.WriteHeader(&tar.Header{Name: filename, Size: int64(len(body)), Mode: 0o755}); err != nil {
 		t.Fatalf("tar header: %v", err)
 	}
 	if _, err := tw.Write(body); err != nil {
 		t.Fatalf("tar write: %v", err)
 	}
-	tw.Close() //nolint:errcheck
-	gw.Close() //nolint:errcheck
+	tw.Close() //nolint:errcheck // best-effort close of tar writer in test helper
+	gw.Close() //nolint:errcheck // best-effort close of gzip writer in test helper
 	return buf.Bytes()
 }
 
@@ -135,7 +135,7 @@ func TestInstalledVersionsSemverSort(t *testing.T) {
 	// Lexicographic sort would give: 1.10.0, 1.9.10, 1.9.8, 1.9.9, 2.0.0
 	// Semver sort should give:       2.0.0, 1.10.0, 1.9.10, 1.9.9, 1.9.8
 	for _, v := range []string{"1.9.8", "2.0.0", "1.9.10", "1.10.0", "1.9.9"} {
-		if err := os.MkdirAll(mgr.VersionDir("terraform", v), 0755); err != nil {
+		if err := os.MkdirAll(mgr.VersionDir("terraform", v), 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -170,7 +170,7 @@ func TestInstalledAppsEmpty(t *testing.T) {
 func TestInstalledAppsAlphabetical(t *testing.T) {
 	mgr := newTestManager(t)
 	for _, app := range []string{"vault", "consul", "terraform"} {
-		if err := os.MkdirAll(filepath.Join(mgr.HomeDir, "versions", app), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(mgr.HomeDir, "versions", app), 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -320,8 +320,8 @@ func TestRemoveInactiveVersion(t *testing.T) {
 func TestDownloadZip(t *testing.T) {
 	mgr := newTestManager(t)
 	data := makeZipArchive(t, "terraform", "#!/bin/sh\necho hello")
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(data) //nolint:errcheck
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(data) //nolint:errcheck // best-effort write of test response body
 	}))
 	defer srv.Close()
 
@@ -333,7 +333,7 @@ func TestDownloadZip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("binary not found: %v", err)
 	}
-	if info.Mode()&0111 == 0 {
+	if info.Mode()&0o111 == 0 {
 		t.Error("expected binary to be executable")
 	}
 }
@@ -341,8 +341,8 @@ func TestDownloadZip(t *testing.T) {
 func TestDownloadTarGz(t *testing.T) {
 	mgr := newTestManager(t)
 	data := makeTarGzArchive(t, "terraform", "#!/bin/sh\necho hello")
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(data) //nolint:errcheck
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(data) //nolint:errcheck // best-effort write of test response body
 	}))
 	defer srv.Close()
 
@@ -368,8 +368,8 @@ func TestDownloadHTTPError(t *testing.T) {
 
 func TestDownloadUnsupportedFormat(t *testing.T) {
 	mgr := newTestManager(t)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("data")) //nolint:errcheck
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("data")) //nolint:errcheck // best-effort write of test response body
 	}))
 	defer srv.Close()
 

@@ -116,7 +116,7 @@ func (m *Manager) InstalledVersions(app string) ([]string, error) {
 	all := make([]entry, 0, len(entries))
 	for _, e := range entries {
 		if e.IsDir() {
-			pv, _ := goversion.NewVersion(e.Name())
+			pv, _ := goversion.NewVersion(e.Name()) //nolint:errcheck // non-semver version strings are valid; parsed value is nil and handled below
 			all = append(all, entry{raw: e.Name(), parsed: pv})
 		}
 	}
@@ -159,7 +159,7 @@ func (m *Manager) InstalledApps() ([]string, error) {
 // it in the version directory.
 func (m *Manager) Download(app, version, targetOS, buildURL string) error {
 	destDir := m.VersionDir(app, version)
-	if err := os.MkdirAll(destDir, 0755); err != nil { //nolint:gosec
+	if err := os.MkdirAll(destDir, 0o750); err != nil {
 		return fmt.Errorf("creating version directory: %w", err)
 	}
 
@@ -168,7 +168,7 @@ func (m *Manager) Download(app, version, targetOS, buildURL string) error {
 	if err != nil {
 		return fmt.Errorf("downloading %s: %w", buildURL, err)
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close() //nolint:errcheck // response body close error is not actionable after successful read
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status %d downloading %s", resp.StatusCode, buildURL)
@@ -179,10 +179,10 @@ func (m *Manager) Download(app, version, targetOS, buildURL string) error {
 		return fmt.Errorf("creating temp file: %w", err)
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName) //nolint:errcheck
+	defer os.Remove(tmpName) //nolint:errcheck // best-effort cleanup of temp file; failure is non-critical
 
 	if _, err := io.Copy(tmp, resp.Body); err != nil {
-		tmp.Close()
+		_ = tmp.Close() //nolint:errcheck // best-effort close before returning the copy error
 		return fmt.Errorf("writing download: %w", err)
 	}
 	if err := tmp.Close(); err != nil {
@@ -208,11 +208,11 @@ func (m *Manager) Use(app, version, targetOS string) error {
 	if _, err := os.Stat(binPath); os.IsNotExist(err) {
 		return fmt.Errorf("%s@%s is not installed", app, version)
 	}
-	if err := os.MkdirAll(m.BinDir(), 0755); err != nil { //nolint:gosec
+	if err := os.MkdirAll(m.BinDir(), 0o750); err != nil {
 		return fmt.Errorf("creating bin directory: %w", err)
 	}
 	link := m.LinkPath(app, targetOS)
-	_ = os.Remove(link)
+	_ = os.Remove(link) //nolint:errcheck // best-effort removal of old symlink; may not exist yet
 	if err := os.Symlink(binPath, link); err != nil {
 		return fmt.Errorf("creating symlink %s -> %s: %w", link, binPath, err)
 	}
@@ -226,8 +226,9 @@ func (m *Manager) Remove(app, version, targetOS string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return fmt.Errorf("%s@%s is not installed", app, version)
 	}
-	if cur, _ := m.CurrentVersion(app, targetOS); cur == version {
-		_ = os.Remove(m.LinkPath(app, targetOS))
+	cur, _ := m.CurrentVersion(app, targetOS) //nolint:errcheck // symlink may not exist; non-existence is handled as empty string
+	if cur == version {
+		_ = os.Remove(m.LinkPath(app, targetOS)) //nolint:errcheck // best-effort removal of active symlink before deleting version directory
 	}
 	if err := os.RemoveAll(dir); err != nil {
 		return fmt.Errorf("removing %s@%s: %w", app, version, err)
@@ -247,34 +248,41 @@ func extractZip(archivePath, binName, destPath string) error {
 	if err != nil {
 		return fmt.Errorf("opening zip: %w", err)
 	}
-	defer r.Close() //nolint:errcheck
+	defer r.Close() //nolint:errcheck // best-effort close of zip reader
 
 	for _, f := range r.File {
 		if filepath.Base(f.Name) != binName {
 			continue
 		}
-		rc, err := f.Open()
-		if err != nil {
-			return fmt.Errorf("opening %s in zip: %w", f.Name, err)
+		if err := extractZipEntry(f, destPath); err != nil {
+			return err
 		}
-		defer rc.Close() //nolint:errcheck
-		return writeExecutable(rc, destPath)
+		return nil
 	}
 	return fmt.Errorf("binary %q not found in archive", binName)
 }
 
+func extractZipEntry(f *zip.File, destPath string) error {
+	rc, err := f.Open()
+	if err != nil {
+		return fmt.Errorf("opening %s in zip: %w", f.Name, err)
+	}
+	defer rc.Close() //nolint:errcheck // best-effort close of zip entry reader
+	return writeExecutable(rc, destPath)
+}
+
 func extractTarGz(archivePath, binName, destPath string) error {
-	f, err := os.Open(archivePath)
+	f, err := os.Open(archivePath) // #nosec G304 -- archivePath is a temp file created by this process
 	if err != nil {
 		return fmt.Errorf("opening archive: %w", err)
 	}
-	defer f.Close() //nolint:errcheck
+	defer f.Close() //nolint:errcheck // best-effort close of archive file
 
 	gz, err := gzip.NewReader(f)
 	if err != nil {
 		return fmt.Errorf("reading gzip: %w", err)
 	}
-	defer gz.Close() //nolint:errcheck
+	defer gz.Close() //nolint:errcheck // best-effort close of gzip reader
 
 	tr := tar.NewReader(gz)
 	for {
@@ -294,12 +302,11 @@ func extractTarGz(archivePath, binName, destPath string) error {
 }
 
 func writeExecutable(r io.Reader, destPath string) error {
-	// #nosec G306 -- 0755 is intentional for an executable binary
-	f, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	f, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755) // #nosec G302 G304 -- 0755 intentional for executable binary; path is constructed from trusted install dir
 	if err != nil {
 		return fmt.Errorf("creating binary at %s: %w", destPath, err)
 	}
-	defer f.Close() //nolint:errcheck
+	defer f.Close() //nolint:errcheck // best-effort close; write errors are caught by io.Copy
 	if _, err := io.Copy(f, r); err != nil {
 		return fmt.Errorf("writing binary: %w", err)
 	}

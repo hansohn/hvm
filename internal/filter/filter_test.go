@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFilterEnterpriseVersions(t *testing.T) {
+func TestEnterpriseVersions(t *testing.T) {
 	tests := []struct {
 		name              string
 		versions          []string
@@ -57,15 +57,15 @@ func TestFilterEnterpriseVersions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := FilterEnterpriseVersions(tt.versions, tt.includeEnterprise, tt.includeHSM)
+			result := EnterpriseVersions(tt.versions, tt.includeEnterprise, tt.includeHSM)
 			if !reflect.DeepEqual(result, tt.expectedVersions) {
-				t.Errorf("FilterEnterpriseVersions() = %v, want %v", result, tt.expectedVersions)
+				t.Errorf("EnterpriseVersions() = %v, want %v", result, tt.expectedVersions)
 			}
 		})
 	}
 }
 
-func TestFilterPreReleaseVersions(t *testing.T) {
+func TestPreReleaseVersions(t *testing.T) {
 	tests := []struct {
 		name              string
 		versions          []string
@@ -112,9 +112,9 @@ func TestFilterPreReleaseVersions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := FilterPreReleaseVersions(tt.versions, tt.includePreRelease)
+			result := PreReleaseVersions(tt.versions, tt.includePreRelease)
 			if !reflect.DeepEqual(result, tt.expectedVersions) {
-				t.Errorf("FilterPreReleaseVersions() = %v, want %v", result, tt.expectedVersions)
+				t.Errorf("PreReleaseVersions() = %v, want %v", result, tt.expectedVersions)
 			}
 		})
 	}
@@ -145,7 +145,7 @@ func TestLimitVersionCount(t *testing.T) {
 	}
 }
 
-func TestFilterVersionsByPattern(t *testing.T) {
+func TestVersionsByPattern(t *testing.T) {
 	// Versions sorted newest first, as they would be in real usage.
 	versions := []string{
 		"2.0.0",
@@ -202,9 +202,9 @@ func TestFilterVersionsByPattern(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := FilterVersionsByPattern(tt.pattern, tt.versions)
+			result := VersionsByPattern(tt.pattern, tt.versions)
 			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("FilterVersionsByPattern() = %v, want %v", result, tt.expected)
+				t.Errorf("VersionsByPattern() = %v, want %v", result, tt.expected)
 			}
 		})
 	}
@@ -260,8 +260,8 @@ func TestCombinedFilters(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := FilterPreReleaseVersions(versions, tt.includePreRelease)
-			result = FilterEnterpriseVersions(result, tt.includeEnterprise, tt.includeHSM)
+			result := PreReleaseVersions(versions, tt.includePreRelease)
+			result = EnterpriseVersions(result, tt.includeEnterprise, tt.includeHSM)
 			result = LimitVersionCount(result, tt.count)
 			if !reflect.DeepEqual(result, tt.expectedVersions) {
 				t.Errorf("combined filters = %v, want %v", result, tt.expectedVersions)

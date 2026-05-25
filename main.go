@@ -78,7 +78,7 @@ and scripted workflows.`,
 	Args:          cobra.NoArgs,
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		return tui.Run(newClient())
 	},
 }
@@ -156,7 +156,7 @@ var versionCmd = &cobra.Command{
 	Short:         "Print version information",
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Printf("hvm version %s\n", version)
 	},
 }
@@ -195,28 +195,31 @@ func init() {
 	}
 }
 
-func runList(cmd *cobra.Command, args []string) error {
+func runList(_ *cobra.Command, args []string) error {
 	if installed {
 		mgr, err := install.New()
 		if err != nil {
 			return err
 		}
 		if len(args) == 0 {
-			apps, err := mgr.InstalledApps()
-			if err != nil {
-				return fmt.Errorf("listing installed apps: %w", err)
+			installedApps, listErr := mgr.InstalledApps()
+			if listErr != nil {
+				return fmt.Errorf("listing installed apps: %w", listErr)
 			}
-			return output.Write(apps, outputFmt)
+			return output.Write(installedApps, outputFmt)
 		}
 		app := args[0]
-		versions, err := mgr.InstalledVersions(app)
-		if err != nil {
-			return fmt.Errorf("listing installed versions: %w", err)
+		versions, versionsErr := mgr.InstalledVersions(app)
+		if versionsErr != nil {
+			return fmt.Errorf("listing installed versions: %w", versionsErr)
 		}
 		if outputFmt != "text" && outputFmt != "" {
 			return output.Write(versions, outputFmt)
 		}
-		current, _ := mgr.CurrentVersion(app, runtime.GOOS)
+		current, currentErr := mgr.CurrentVersion(app, runtime.GOOS)
+		if currentErr != nil {
+			current = ""
+		}
 		for _, v := range versions {
 			if v == current {
 				fmt.Printf("-> %s\n", v)
@@ -252,11 +255,11 @@ func runList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("fetching versions: %w", err)
 	}
-	versions = filter.FilterPreReleaseVersions(versions, preRelease)
-	versions = filter.FilterEnterpriseVersions(versions, enterprise, hsm)
+	versions = filter.PreReleaseVersions(versions, preRelease)
+	versions = filter.EnterpriseVersions(versions, enterprise, hsm)
 
 	if verFlag != "" {
-		versions = filter.FilterVersionsByPattern(verFlag, versions)
+		versions = filter.VersionsByPattern(verFlag, versions)
 		if len(versions) == 0 {
 			return fmt.Errorf("no version matching %q found for %s", verFlag, app)
 		}
@@ -291,7 +294,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	return output.Write(results, outputFmt)
 }
 
-func runGet(cmd *cobra.Command, args []string) error {
+func runGet(_ *cobra.Command, args []string) error {
 	app := args[0]
 	client := newClient()
 
@@ -299,12 +302,13 @@ func runGet(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("fetching versions: %w", err)
 	}
-	versions = filter.FilterPreReleaseVersions(versions, preRelease)
-	versions = filter.FilterEnterpriseVersions(versions, enterprise, hsm)
+	versions = filter.PreReleaseVersions(versions, preRelease)
+	versions = filter.EnterpriseVersions(versions, enterprise, hsm)
 
 	pattern := verFlag
 	if pattern == "" {
-		if cwd, err := os.Getwd(); err == nil {
+		cwd, cwdErr := os.Getwd()
+		if cwdErr == nil {
 			if v, file := hvmrc.Lookup(app, cwd); v != "" {
 				fmt.Fprintf(os.Stderr, "Found %q in %s\n", app+"="+v, file)
 				pattern = v
@@ -314,7 +318,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 	if pattern == "" {
 		pattern = "latest"
 	}
-	matched := filter.FilterVersionsByPattern(pattern, versions)
+	matched := filter.VersionsByPattern(pattern, versions)
 	if len(matched) == 0 {
 		return fmt.Errorf("no version matching %q found for %s", pattern, app)
 	}
@@ -337,24 +341,24 @@ func runGet(cmd *cobra.Command, args []string) error {
 	if mgr.IsInstalled(app, resolvedVersion, effectiveOS) {
 		fmt.Printf("%s@%s is already installed\n", app, resolvedVersion)
 	} else {
-		metadata, err := client.FetchVersionMetadata(app, resolvedVersion)
-		if err != nil {
-			return fmt.Errorf("fetching metadata: %w", err)
+		metadata, metaErr := client.FetchVersionMetadata(app, resolvedVersion)
+		if metaErr != nil {
+			return fmt.Errorf("fetching metadata: %w", metaErr)
 		}
 		builds, _ := releases.FilterAndSortBuilds(metadata.Builds, effectiveOS, effectiveArch)
 		if len(builds) == 0 {
 			return fmt.Errorf("no build found for %s/%s", effectiveOS, effectiveArch)
 		}
 		fmt.Printf("Downloading %s@%s (%s/%s)...\n", app, resolvedVersion, effectiveOS, effectiveArch)
-		if err := mgr.Download(app, resolvedVersion, effectiveOS, builds[0].URL); err != nil {
-			return fmt.Errorf("downloading: %w", err)
+		if dlErr := mgr.Download(app, resolvedVersion, effectiveOS, builds[0].URL); dlErr != nil {
+			return fmt.Errorf("downloading: %w", dlErr)
 		}
 		fmt.Printf("Downloaded %s@%s\n", app, resolvedVersion)
 	}
 
 	if !noUse {
-		if err := mgr.Use(app, resolvedVersion, effectiveOS); err != nil {
-			return fmt.Errorf("activating: %w", err)
+		if useErr := mgr.Use(app, resolvedVersion, effectiveOS); useErr != nil {
+			return fmt.Errorf("activating: %w", useErr)
 		}
 		fmt.Printf("Now using %s@%s\n", app, resolvedVersion)
 		warnIfNotInPath(mgr.BinDir())
@@ -363,7 +367,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runUse(cmd *cobra.Command, args []string) error {
+func runUse(_ *cobra.Command, args []string) error {
 	mgr, err := install.New()
 	if err != nil {
 		return err
@@ -415,7 +419,7 @@ func runUse(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runCurrent(cmd *cobra.Command, args []string) error {
+func runCurrent(_ *cobra.Command, args []string) error {
 	app := args[0]
 	mgr, err := install.New()
 	if err != nil {
@@ -433,7 +437,7 @@ func runCurrent(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runWhich(cmd *cobra.Command, args []string) error {
+func runWhich(_ *cobra.Command, args []string) error {
 	app := args[0]
 	mgr, err := install.New()
 	if err != nil {
@@ -450,7 +454,7 @@ func runWhich(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runRemove(cmd *cobra.Command, args []string) error {
+func runRemove(_ *cobra.Command, args []string) error {
 	app, ver := args[0], args[1]
 
 	mgr, err := install.New()

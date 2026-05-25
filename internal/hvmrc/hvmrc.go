@@ -51,11 +51,11 @@ func LookupAll(dir string) (entries map[string]string, file string) {
 }
 
 func readAll(path string) map[string]string {
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 -- path is always filepath.Join(dir, ".hvmrc")
 	if err != nil {
 		return nil
 	}
-	defer f.Close() //nolint:errcheck
+	defer f.Close() //nolint:errcheck // best-effort close on read-only file
 
 	m := map[string]string{}
 	scanner := bufio.NewScanner(f)
@@ -79,11 +79,11 @@ func readAll(path string) map[string]string {
 }
 
 func readVersion(path, app string) string {
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 -- path is always filepath.Join(dir, ".hvmrc")
 	if err != nil {
 		return ""
 	}
-	defer f.Close() //nolint:errcheck
+	defer f.Close() //nolint:errcheck // best-effort close on read-only file
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {

@@ -6,13 +6,12 @@ import (
 	"testing"
 )
 
-func writeHvmrc(t *testing.T, dir, content string) string {
+func writeHvmrc(t *testing.T, dir, content string) {
 	t.Helper()
 	path := filepath.Join(dir, ".hvmrc")
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write .hvmrc: %v", err)
 	}
-	return path
 }
 
 // ---- Lookup ----------------------------------------------------------------
@@ -43,7 +42,7 @@ func TestLookupSecondEntry(t *testing.T) {
 func TestLookupWalksUp(t *testing.T) {
 	parent := t.TempDir()
 	child := filepath.Join(parent, "sub", "project")
-	if err := os.MkdirAll(child, 0755); err != nil {
+	if err := os.MkdirAll(child, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	writeHvmrc(t, parent, "terraform=1.9.8\n")
@@ -60,7 +59,7 @@ func TestLookupWalksUp(t *testing.T) {
 func TestLookupChildOverridesParent(t *testing.T) {
 	parent := t.TempDir()
 	child := filepath.Join(parent, "project")
-	if err := os.MkdirAll(child, 0755); err != nil {
+	if err := os.MkdirAll(child, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	writeHvmrc(t, parent, "terraform=1.9.8\n")
@@ -168,7 +167,7 @@ func TestLookupAllSkipsMalformedLines(t *testing.T) {
 func TestLookupAllWalksUp(t *testing.T) {
 	parent := t.TempDir()
 	child := filepath.Join(parent, "project")
-	if err := os.MkdirAll(child, 0755); err != nil {
+	if err := os.MkdirAll(child, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	writeHvmrc(t, parent, "terraform=1.9.8\nvault=1.15.3\n")

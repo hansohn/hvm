@@ -1,4 +1,4 @@
-version: 2
+version: "2"
 
 run:
   timeout: 5m
@@ -20,43 +20,44 @@ linters:
     - unparam         # Reports unused function parameters
     - bodyclose       # Checks whether HTTP response body is closed successfully
 
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+
+    govet:
+      enable:
+        - shadow
+
+    gosec:
+      excludes:
+        - G104  # Errors unhandled (covered by errcheck)
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      disabled-checks:
+        - ifElseChain
+        - singleCaseSwitch
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+
 formatters:
   enable:
     - gofmt           # Check whether code was gofmt-ed
     - goimports       # Check import statements are formatted
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-
-  govet:
-    check-shadowing: true
-
-  gofmt:
-    simplify: true
-
-  gosec:
-    excludes:
-      - G104  # Errors unhandled (covered by errcheck)
-
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-    disabled-checks:
-      - ifElseChain
-      - singleCaseSwitch
+  settings:
+    gofmt:
+      simplify: true
 
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-
-  # Exclude some linters from running on tests files
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
