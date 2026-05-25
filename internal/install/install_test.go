@@ -61,8 +61,8 @@ func makeTarGzArchive(t *testing.T, filename, content string) []byte {
 	if _, err := tw.Write(body); err != nil {
 		t.Fatalf("tar write: %v", err)
 	}
-	tw.Close() //nolint:errcheck // best-effort close of tar writer in test helper
-	gw.Close() //nolint:errcheck // best-effort close of gzip writer in test helper
+	tw.Close()
+	gw.Close()
 	return buf.Bytes()
 }
 
@@ -321,7 +321,7 @@ func TestDownloadZip(t *testing.T) {
 	mgr := newTestManager(t)
 	data := makeZipArchive(t, "terraform", "#!/bin/sh\necho hello")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write(data) //nolint:errcheck // best-effort write of test response body
+		w.Write(data)
 	}))
 	defer srv.Close()
 
@@ -342,7 +342,7 @@ func TestDownloadTarGz(t *testing.T) {
 	mgr := newTestManager(t)
 	data := makeTarGzArchive(t, "terraform", "#!/bin/sh\necho hello")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write(data) //nolint:errcheck // best-effort write of test response body
+		w.Write(data)
 	}))
 	defer srv.Close()
 
@@ -369,7 +369,7 @@ func TestDownloadHTTPError(t *testing.T) {
 func TestDownloadUnsupportedFormat(t *testing.T) {
 	mgr := newTestManager(t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write([]byte("data")) //nolint:errcheck // best-effort write of test response body
+		w.Write([]byte("data"))
 	}))
 	defer srv.Close()
 

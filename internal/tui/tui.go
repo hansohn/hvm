@@ -522,7 +522,7 @@ func (m model) installCmd(version string) tea.Cmd {
 			if err != nil {
 				return opDoneMsg{version: version, err: err}
 			}
-			builds, _ := releases.FilterAndSortBuilds(metadata.Builds, targetOS, targetArch)
+			builds := releases.FilterBuilds(metadata.Builds, targetOS, targetArch)
 			if len(builds) == 0 {
 				return opDoneMsg{version: version, err: fmt.Errorf("no build for %s/%s", targetOS, targetArch)}
 			}
@@ -713,7 +713,7 @@ func newBaseList(items []list.Item, delegate list.ItemDelegate, title string) li
 
 //nolint:gocritic // hugeParam: model value receiver required by the tea.Model interface
 func (m model) buildYAMLView() *yamlView {
-	current, _ := releases.FilterAndSortBuilds(m.metadata.Builds, runtime.GOOS, runtime.GOARCH)
+	current := releases.FilterBuilds(m.metadata.Builds, runtime.GOOS, runtime.GOARCH)
 	if current == nil {
 		current = []releases.Build{}
 	}

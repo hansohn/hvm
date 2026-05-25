@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-// ---- FilterAndSortBuilds ---------------------------------------------------
+// ---- FilterBuilds ----------------------------------------------------------
 
-func TestFilterAndSortBuilds(t *testing.T) {
+func TestFilterBuilds(t *testing.T) {
 	builds := []Build{
 		{OS: "linux", Arch: "amd64", URL: "linux_amd64.zip"},
 		{OS: "linux", Arch: "arm64", URL: "linux_arm64.zip"},
@@ -20,43 +20,36 @@ func TestFilterAndSortBuilds(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		targetOS            string
-		targetArch          string
-		expectedCurrent     []Build
-		expectedOthersCount int
+		name            string
+		targetOS        string
+		targetArch      string
+		expectedCurrent []Build
 	}{
 		{
-			name:                "linux amd64",
-			targetOS:            "linux",
-			targetArch:          "amd64",
-			expectedCurrent:     []Build{{OS: "linux", Arch: "amd64", URL: "linux_amd64.zip"}},
-			expectedOthersCount: 4,
+			name:            "linux amd64",
+			targetOS:        "linux",
+			targetArch:      "amd64",
+			expectedCurrent: []Build{{OS: "linux", Arch: "amd64", URL: "linux_amd64.zip"}},
 		},
 		{
-			name:                "darwin arm64",
-			targetOS:            "darwin",
-			targetArch:          "arm64",
-			expectedCurrent:     []Build{{OS: "darwin", Arch: "arm64", URL: "darwin_arm64.zip"}},
-			expectedOthersCount: 4,
+			name:            "darwin arm64",
+			targetOS:        "darwin",
+			targetArch:      "arm64",
+			expectedCurrent: []Build{{OS: "darwin", Arch: "arm64", URL: "darwin_arm64.zip"}},
 		},
 		{
-			name:                "no match",
-			targetOS:            "freebsd",
-			targetArch:          "amd64",
-			expectedCurrent:     nil,
-			expectedOthersCount: 5,
+			name:            "no match",
+			targetOS:        "freebsd",
+			targetArch:      "amd64",
+			expectedCurrent: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			current, others := FilterAndSortBuilds(builds, tt.targetOS, tt.targetArch)
+			current := FilterBuilds(builds, tt.targetOS, tt.targetArch)
 			if !reflect.DeepEqual(current, tt.expectedCurrent) {
 				t.Errorf("current = %v, want %v", current, tt.expectedCurrent)
-			}
-			if len(others) != tt.expectedOthersCount {
-				t.Errorf("others count = %d, want %d", len(others), tt.expectedOthersCount)
 			}
 		})
 	}

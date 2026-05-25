@@ -92,9 +92,6 @@ func (m *Manager) CurrentVersion(app, targetOS string) (string, error) {
 	}
 	rest := strings.TrimPrefix(target, versionsBase)
 	parts := strings.SplitN(rest, string(filepath.Separator), 2)
-	if len(parts) == 0 {
-		return "", nil
-	}
 	return parts[0], nil
 }
 

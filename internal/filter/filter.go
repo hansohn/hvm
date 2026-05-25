@@ -92,7 +92,7 @@ func VersionsByPattern(pattern string, versions []string) []string {
 
 	var matched []string
 	for _, v := range versions {
-		if strings.HasPrefix(v, pattern) {
+		if strings.HasPrefix(v, pattern+".") {
 			matched = append(matched, v)
 		}
 	}

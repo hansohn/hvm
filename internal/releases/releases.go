@@ -49,7 +49,7 @@ func New(baseURL string) *Client {
 
 // FetchApplications returns a sorted, deduplicated list of available applications.
 func (c *Client) FetchApplications() ([]string, error) {
-	resp, err := c.httpClient.Get(c.BaseURL) //nolint:noctx // context not available at this call site; no timeout needed for a CLI tool
+	resp, err := c.httpClient.Get(c.BaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch applications: %w", err)
 	}
@@ -96,7 +96,7 @@ func (c *Client) FetchApplications() ([]string, error) {
 func (c *Client) FetchVersions(app string) ([]string, error) {
 	url := fmt.Sprintf("%s/%s/", c.BaseURL, app)
 	// #nosec G107 -- URL constructed from user-configured BaseURL and app name from trusted source
-	resp, err := c.httpClient.Get(url) //nolint:noctx // context not available at this call site; no timeout needed for a CLI tool
+	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch versions for %s: %w", app, err)
 	}
@@ -163,7 +163,7 @@ func (c *Client) FetchVersions(app string) ([]string, error) {
 func (c *Client) FetchVersionMetadata(app, ver string) (*VersionMetadata, error) {
 	url := fmt.Sprintf("%s/%s/%s/", c.BaseURL, app, ver)
 	// #nosec G107 -- URL constructed from user-configured BaseURL and values from trusted source
-	resp, err := c.httpClient.Get(url) //nolint:noctx // context not available at this call site; no timeout needed for a CLI tool
+	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch metadata for %s %s: %w", app, ver, err)
 	}
@@ -217,16 +217,15 @@ func (c *Client) FetchVersionMetadata(app, ver string) (*VersionMetadata, error)
 	return metadata, nil
 }
 
-// FilterAndSortBuilds splits builds into those matching the target platform and all others.
-func FilterAndSortBuilds(builds []Build, targetOS, targetArch string) (current, others []Build) {
+// FilterBuilds returns builds matching the target platform.
+func FilterBuilds(builds []Build, targetOS, targetArch string) []Build {
+	var current []Build
 	for _, b := range builds {
 		if b.OS == targetOS && b.Arch == targetArch {
 			current = append(current, b)
-		} else {
-			others = append(others, b)
 		}
 	}
-	return current, others
+	return current
 }
 
 // FilterFilesByPlatform returns checksum/signature files and files matching the target platform.
@@ -235,7 +234,7 @@ func FilterFilesByPlatform(files []string, targetOS, targetArch string) []string
 
 	var filtered []string
 	for _, file := range files {
-		if strings.Contains(file, "SHA256SUMS") || strings.HasSuffix(file, ".sig") || file == "terms" {
+		if strings.Contains(file, "SHA256SUMS") || strings.HasSuffix(file, ".sig") || file == "terms" { // "terms" is the HashiCorp enterprise license agreement file that appears on some release pages
 			filtered = append(filtered, file)
 			continue
 		}

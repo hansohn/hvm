@@ -61,10 +61,11 @@ func warnIfNotInPath(binDir string) {
 }
 
 func newClient() *releases.Client {
-	if releasesURL == "" {
-		releasesURL = releases.DefaultBaseURL
+	url := releasesURL
+	if url == "" {
+		url = releases.DefaultBaseURL
 	}
-	return releases.New(releasesURL)
+	return releases.New(url)
 }
 
 var rootCmd = &cobra.Command{
@@ -196,6 +197,9 @@ func init() {
 }
 
 func runList(_ *cobra.Command, args []string) error {
+	if count < -1 {
+		return fmt.Errorf("--limit must be -1 (all) or a non-negative integer, got %d", count)
+	}
 	if installed {
 		mgr, err := install.New()
 		if err != nil {
@@ -276,7 +280,7 @@ func runList(_ *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("fetching metadata for %s: %w", ver, err)
 		}
-		currentBuilds, _ := releases.FilterAndSortBuilds(metadata.Builds, effectiveOS, effectiveArch)
+		currentBuilds := releases.FilterBuilds(metadata.Builds, effectiveOS, effectiveArch)
 		if currentBuilds == nil {
 			currentBuilds = []releases.Build{}
 		}
@@ -345,7 +349,7 @@ func runGet(_ *cobra.Command, args []string) error {
 		if metaErr != nil {
 			return fmt.Errorf("fetching metadata: %w", metaErr)
 		}
-		builds, _ := releases.FilterAndSortBuilds(metadata.Builds, effectiveOS, effectiveArch)
+		builds := releases.FilterBuilds(metadata.Builds, effectiveOS, effectiveArch)
 		if len(builds) == 0 {
 			return fmt.Errorf("no build found for %s/%s", effectiveOS, effectiveArch)
 		}
