@@ -1,8 +1,27 @@
-# HashiCorp Version Manager (hvm)
+<div align="center">
+  <h3>hvm</h3>
+  <p>a version manager for HashiCorp tools</p>
+  <p>
+    <!-- Build Status -->
+    <a href="https://github.com/hansohn/hvm/actions/workflows/ci.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/hansohn/hvm/ci.yml?branch=main&style=for-the-badge">
+    </a>
+    <!-- Github Tag -->
+    <a href="https://github.com/hansohn/hvm/tags/">
+      <img src="https://img.shields.io/github/tag/hansohn/hvm.svg?style=for-the-badge">
+    </a>
+    <!-- License -->
+    <a href="https://github.com/hansohn/hvm/blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/hansohn/hvm.svg?style=for-the-badge">
+    </a>
+    <!-- LinkedIn -->
+    <a href="https://linkedin.com/in/ryanhansohn">
+      <img src="https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555">
+    </a>
+  </p>
+</div>
 
-A CLI tool for installing and managing HashiCorp tool releases. Run without arguments for an interactive TUI, or use subcommands for scripting and automation.
-
-## Features
+## :sparkles: Features
 
 - **Interactive TUI** — browse applications, versions, and metadata with keyboard-driven navigation
 - **Version management** — install, activate, and remove HashiCorp tool versions
@@ -11,7 +30,7 @@ A CLI tool for installing and managing HashiCorp tool releases. Run without argu
 - **Flexible output** — text, JSON, and YAML output formats for scripting
 - **Air-gapped support** — point to an internal mirror with `--mirror`
 
-## Installation
+## :hammer_and_wrench: Installation
 
 ### Build from source (native)
 
@@ -37,7 +56,7 @@ export PATH="$HOME/.hvm/bin:$PATH"
 
 Add that line to your shell profile (`.zshrc`, `.bashrc`, etc.) to make it permanent.
 
-## Usage
+## :open_book: Usage
 
 ### Interactive TUI
 
@@ -216,7 +235,7 @@ The mirror must expose the same structure as `releases.hashicorp.com`:
 - `{base}/{app}/` — version list
 - `{base}/{app}/{version}/` — build files
 
-## How it works
+## :gear: How it works
 
 `hvm` manages versions using symlinks:
 
@@ -236,7 +255,7 @@ The mirror must expose the same structure as `releases.hashicorp.com`:
 
 Set `HVM_HOME` to override the default `~/.hvm` directory.
 
-## Development
+## :computer: Development
 
 ### Make targets
 
@@ -290,7 +309,7 @@ docker buildx build \
   --file docker/Dockerfile --target test .
 ```
 
-## Dependencies
+## :package: Dependencies
 
 - [Cobra](https://github.com/spf13/cobra) — CLI framework
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea) — TUI framework
@@ -299,6 +318,13 @@ docker buildx build \
 - [go-version](https://github.com/hashicorp/go-version) — semver sorting
 - [golang.org/x/net/html](https://pkg.go.dev/golang.org/x/net/html) — HTML parsing
 
-## License
+## :page_facing_up: License
 
-MIT
+Apache 2.0
+
+## :warning: Disclaimer
+
+This project is not affiliated with, endorsed by, or sponsored by HashiCorp, Inc. HashiCorp, Terraform, Vault, Consul, Nomad, and other HashiCorp product names are trademarks of HashiCorp, Inc. This tool simply automates downloading publicly available releases from HashiCorp's release server.
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
